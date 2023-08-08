@@ -80,7 +80,7 @@ export default {
 
 			// Text data
 			if (contentType.includes('text/plain')) {
-				type = 'text/plain';
+				type = 'text/plain; charset=UTF-8';
 				content = await request.arrayBuffer();
 				if (url.searchParams.get('name')) {
 					name = url.searchParams.get('name');
@@ -146,7 +146,7 @@ export default {
 			}
 
 			const headers = new Headers();
-			headers.set('Content-Type', 'text/plain; charset=utf-8');
+			headers.set('Content-Type', 'text/plain; charset=UTF-8');
 
 			let filename = uuid + '.txt';
 			if (metadata && metadata.name) {
@@ -154,7 +154,11 @@ export default {
 			}
 
 			if (metadata && metadata.type) {
+				if(metadata.type === "text/plain") {
+					headers.set('Content-Type', "text/plain; charset=UTF-8");
+				} else {
 				headers.set('Content-Type', metadata.type);
+			}
 			}
 
 			if (metadata && metadata.lastModified) {
