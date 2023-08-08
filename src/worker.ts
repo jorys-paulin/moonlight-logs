@@ -112,6 +112,10 @@ export default {
 				return new Response('Invalid Contents', { status: 400 });
 			}
 
+			if (content.byteLength > 26214400) {
+				return new Response('Payload Too Large', { status: 413 });
+			}
+
 			if (!name) {
 				name = uuid + '.txt';
 			}
