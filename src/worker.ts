@@ -3,6 +3,8 @@
  * A simple service to upload and download Moonlight log files, powered by CloudFlare Workers
  */
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 const indexPage = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -47,26 +49,19 @@ const indexPage = `<!DOCTYPE html>
 </body>
 </html>`;
 
-type KVMetadata = { name?: string; type?: string; lastModified?: number };
-
-export interface Env {
-	// Binding to KV namespace used to store files
-	MOONLIGHT_LOGS: KVNamespace;
-	// Administration token used to authenticate DELETE requests
-	MOONLIGHT_ADMIN_TOKEN: string;
-}
+type MoonlightLogsKVMetadata = { name?: string; type?: string; lastModified?: number };
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
 		// Homepage route
-		if (request.method === 'GET' && url.pathname === '/') {
+		if (request.method === 'GET' && !url.searchParams.has('id')) {
 			return new Response(indexPage, { headers: { 'Content-Type': 'text/html' } });
 		}
 
 		// Upload route
-		if (request.method === 'POST' && url.pathname === '/') {
+		if (request.method === 'POST') {
 			const contentType = request.headers.get('Content-Type');
 
 			if (!contentType) {
@@ -125,24 +120,30 @@ export default {
 				metadata: { name, type, lastModified: Date.now() },
 			});
 
-			const redirectUrl = url.origin + url.pathname + uuid;
-			return Response.redirect(redirectUrl);
+			const redirectURL = new URL(url);
+			redirectURL.search = '';
+			redirectURL.searchParams.set('id', uuid);
+			return Response.redirect(redirectURL.toString(), 303);
 		}
 
-		const regexRoute = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/gm;
-
 		// Download route
-		if (request.method === 'GET' && url.pathname.match(regexRoute)) {
-			const matches = url.pathname.match(regexRoute);
-			if (!matches || !matches[0]) {
-				return new Response('Invalid UUID', { status: 403 });
-			}
-			const uuid = matches[0].substring(1);
+		if (request.method === 'GET' && url.searchParams.has('id')) {
+			const uuid = url.searchParams.get('id');
 
-			const { value, metadata } = await env.MOONLIGHT_LOGS.getWithMetadata<KVMetadata>(uuid, { cacheTtl: 60, type: 'arrayBuffer' });
+			// Check for UUID
+			if (!uuid) {
+				return new Response('Missing UUID', { status: 400 });
+			}
+
+			// Check for valid UUID
+			if (!uuid.match(UUID_REGEX)) {
+				return new Response('Invalid UUID', { status: 400 });
+			}
+
+			const { value, metadata } = await env.MOONLIGHT_LOGS.getWithMetadata<MoonlightLogsKVMetadata>(uuid, { cacheTtl: 60, type: 'arrayBuffer' });
 
 			if (value === null) {
-				return new Response('Value not found', { status: 404 });
+				return new Response('File not found', { status: 404 });
 			}
 
 			const headers = new Headers();
@@ -154,11 +155,11 @@ export default {
 			}
 
 			if (metadata && metadata.type) {
-				if(metadata.type === "text/plain") {
-					headers.set('Content-Type', "text/plain; charset=UTF-8");
+				if (metadata.type === 'text/plain') {
+					headers.set('Content-Type', 'text/plain; charset=UTF-8');
 				} else {
-				headers.set('Content-Type', metadata.type);
-			}
+					headers.set('Content-Type', metadata.type);
+				}
 			}
 
 			if (metadata && metadata.lastModified) {
@@ -175,19 +176,30 @@ export default {
 		}
 
 		// Delete route
-		if (request.method === 'DELETE' && url.pathname.match(regexRoute)) {
-			const matches = url.pathname.match(regexRoute);
-			if (!matches || !matches[0]) {
-				return new Response('Invalid UUID', { status: 403 });
+		if (request.method === 'DELETE' && url.searchParams.get('id')) {
+			const uuid = url.searchParams.get('id');
+
+			// Check for UUID
+			if (!uuid) {
+				return new Response('Missing UUID', { status: 400 });
 			}
-			const uuid = matches[0].substring(1);
+
+			// Check for valid UUID
+			if (!uuid.match(UUID_REGEX)) {
+				return new Response('Invalid UUID', { status: 400 });
+			}
 
 			// Only allow token bearers to use this route
 			if (request.headers.get('Authorization') !== 'Bearer ' + env.MOONLIGHT_ADMIN_TOKEN) {
 				return new Response('Forbidden', { status: 403 });
 			}
 
-			await env.MOONLIGHT_LOGS.delete(uuid);
+			try {
+				await env.MOONLIGHT_LOGS.delete(uuid);
+			} catch (error) {
+				console.error(error);
+				return new Response('Internal Server Error', { status: 500 });
+			}
 
 			return new Response(null, { status: 204 });
 		}
