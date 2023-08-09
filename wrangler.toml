@@ -2,12 +2,17 @@ name = "moonlight-logs"
 main = "src/worker.ts"
 compatibility_date = "2023-08-01"
 
+[vars]
+MOONLIGHT_MAX_FILE_SIZE = 26214400
+MOONLIGHT_EXPIRATION_TTL = 2592000
+
 # [secrets]
 # MOONLIGHT_ADMIN_TOKEN = <administration-token>
 
-kv_namespaces = [
-	{ binding = "MOONLIGHT_LOGS", id = "7bf618c5146b4a4ab1bb8d4b12be3c3c", preview_id = "f8f3cbeb0b264024a88c64080dd25264" },
-]
+[[kv_namespaces]]
+binding = "MOONLIGHT_LOGS"
+id = "7bf618c5146b4a4ab1bb8d4b12be3c3c"
+preview_id = "f8f3cbeb0b264024a88c64080dd25264"
 
 # Variable bindings. These are arbitrary, plaintext strings (similar to environment variables)
 # Note: Use secrets to store sensitive data.

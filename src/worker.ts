@@ -66,7 +66,7 @@ export default {
 				return new Response('Invalid Contents', { status: 400 });
 			}
 
-			if (content.byteLength > 26214400) {
+				if (content.byteLength > env.MOONLIGHT_MAX_FILE_SIZE) {
 				return new Response('Payload Too Large', { status: 413 });
 			}
 
@@ -75,7 +75,7 @@ export default {
 			}
 
 			await env.MOONLIGHT_LOGS.put(uuid, content, {
-				expirationTtl: 60 * 60 * 24 * 31,
+						expirationTtl: env.MOONLIGHT_EXPIRATION_TTL,
 				metadata: { name, type, lastModified: Date.now() },
 			});
 
