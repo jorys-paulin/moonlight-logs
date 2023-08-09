@@ -3,51 +3,10 @@
  * A simple service to upload and download Moonlight log files, powered by CloudFlare Workers
  */
 
+// @ts-ignore
+import indexPage from './index.html';
+
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
-const indexPage = `<!DOCTYPE html>
-<html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Moonlight Logs</title>
-	<style>
-		:root {
-			color-scheme: dark;
-		}
-
-		* {
-			box-sizing: border-box;
-		}
-
-		body {
-			margin: 0;
-			font-family: "Open Sans", sans-serif;
-			line-height: 1.5;
-			background-color: #000;
-			color: #fff;
-		}
-		.wrapper {
-			max-width: 540px;
-			margin-left: auto;
-			margin-right: auto;
-			padding-left: 1rem;
-			padding-right: 1rem;
-		}
-	</style>
-</head>
-<body>
-	<div class="wrapper">
-		<h1>Moonlight Logs</h1>
-		<p>This is a small service to upload and download Moonlight logs</p>
-		<form action="" method="post" enctype="multipart/form-data">
-			<input type="file" name="file" required>
-			<input type="hidden" name="redirect">
-			<button type="submit">Upload file</button>
-		</form>
-	</div>
-</body>
-</html>`;
 
 type MoonlightLogsKVMetadata = { name?: string; type?: string; lastModified?: number };
 
@@ -140,7 +99,10 @@ export default {
 				return new Response('Invalid UUID', { status: 400 });
 			}
 
-			const { value, metadata } = await env.MOONLIGHT_LOGS.getWithMetadata<MoonlightLogsKVMetadata>(uuid, { cacheTtl: 60, type: 'arrayBuffer' });
+			const { value, metadata } = await env.MOONLIGHT_LOGS.getWithMetadata<MoonlightLogsKVMetadata>(uuid, {
+				cacheTtl: 60,
+				type: 'arrayBuffer',
+			});
 
 			if (value === null) {
 				return new Response('File not found', { status: 404 });
