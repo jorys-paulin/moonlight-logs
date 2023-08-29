@@ -129,11 +129,7 @@ export default {
 				const headers = new Headers();
 				headers.set('Content-Type', 'text/plain; charset=UTF-8');
 
-				let filename = uuid + '.txt';
-				if (metadata && metadata.name) {
-					filename = metadata.name;
-				}
-
+				// File type
 				if (metadata && metadata.type) {
 					if (metadata.type === 'text/plain') {
 						headers.set('Content-Type', 'text/plain; charset=UTF-8');
@@ -142,14 +138,18 @@ export default {
 					}
 				}
 
+				// File name
+				let filename = uuid + '.txt';
+				if (metadata && metadata.name) {
+					filename = metadata.name;
+				}
+				headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+
+				// Last modified metadata
 				if (metadata && metadata.lastModified) {
 					const lastModified = new Date(metadata.lastModified);
 					// @ts-expect-error
 					headers.set('Last-Modified', lastModified.toGMTString());
-				}
-
-				if (url.searchParams.has('download')) {
-					headers.set('Content-Disposition', `attachment; filename="${filename}"`);
 				}
 
 				return new Response(value, { headers });
