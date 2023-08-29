@@ -5,6 +5,8 @@
 
 // @ts-ignore
 import indexPage from './index.html';
+// @ts-ignore
+import resultPage from './result.html';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
@@ -88,7 +90,17 @@ export default {
 				const redirectURL = new URL(url);
 				redirectURL.search = '';
 				redirectURL.searchParams.set('id', uuid);
-				return Response.redirect(redirectURL.toString(), 303);
+				const accept = request.headers.get('Accept');
+				if (accept && accept.includes('text/html')) {
+					return new Response(resultPage.replaceAll('{{ redirectURL }}', redirectURL.toString()), {
+						headers: { 'Content-Type': 'text/html;charset=UTF-8' },
+					});
+				} else {
+					return new Response(redirectURL.toString(), {
+						status: 201,
+						headers: { Location: redirectURL.toString() },
+					});
+				}
 			}
 
 			// Download route

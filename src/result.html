@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Moonlight Logs</title>
+		<meta name="description" content="This is a small service to upload and download Moonlight logs" />
+		<meta name="theme-color" content="#434343" />
+		<style>
+			:root {
+				color-scheme: dark;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			body {
+				max-width: 540px;
+				margin: 0 auto;
+				padding: 1rem;
+				font-family: 'Open Sans', sans-serif;
+				line-height: 1.5;
+				background-color: #121212;
+				color: #fff;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>Log sucessfully uploaded!</h1>
+		<p>Your log has been sucessfully uploaded and is now avaliable at the following address:</p>
+		<p><a href="{{ redirectURL }}">{{ redirectURL }}</a></p>
+		<p>Keep in mind that anyone with this link can download your log file, and that it will be deleted in 30 days.</p>
+		<p><a href="">Go back to home page</a></p>
+	</body>
+</html>
