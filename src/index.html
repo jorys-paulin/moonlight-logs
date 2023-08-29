@@ -4,6 +4,8 @@
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Moonlight Logs</title>
+		<meta name="description" content="This is a small service to upload and download Moonlight logs" />
+		<meta name="theme-color" content="#434343" />
 		<style>
 			:root {
 				color-scheme: dark;
@@ -14,30 +16,36 @@
 			}
 
 			body {
-				margin: 0;
+				max-width: 540px;
+				margin: 0 auto;
+				padding: 1rem;
 				font-family: 'Open Sans', sans-serif;
 				line-height: 1.5;
-				background-color: #000;
+				background-color: #121212;
 				color: #fff;
 			}
-			.wrapper {
-				max-width: 540px;
-				margin-left: auto;
-				margin-right: auto;
-				padding-left: 1rem;
-				padding-right: 1rem;
+
+			form {
+				display: grid;
+				gap: 1rem;
+				grid-template-columns: 2fr 1fr;
 			}
 		</style>
 	</head>
 	<body>
-		<div class="wrapper">
-			<h1>Moonlight Logs</h1>
-			<p>This is a small service to upload and download Moonlight logs</p>
-			<form action="" method="post" enctype="multipart/form-data">
-				<input type="file" name="file" required />
-				<input type="hidden" name="redirect" />
-				<button type="submit">Upload file</button>
-			</form>
-		</div>
+		<h1>Moonlight Logs</h1>
+		<p>This is a small service to upload and download Moonlight logs</p>
+		<h2>Upload a new log</h2>
+		<p>You can use the following form to upload a log manually. Once uploaded you'll get a link you can use to share the log file.</p>
+		<form method="post" enctype="multipart/form-data">
+			<input type="file" name="file" id="fileInput" />
+			<button type="submit">Upload</button>
+		</form>
+		<h2>Download a log</h2>
+		<p>You can download a specific log if you know its unique identifier.</p>
+		<form>
+			<input type="text" name="id" placeholder="ab92275a-745e-4c35-ad95-83e853803a43" required />
+			<button type="submit">Download</button>
+		</form>
 	</body>
 </html>
