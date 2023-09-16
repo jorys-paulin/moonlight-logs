@@ -10,7 +10,14 @@ import resultPage from './result.html';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-type MoonlightLogsKVMetadata = { name?: string; type?: string; lastModified?: number };
+type MoonlightLogsKVMetadata = { name?: string; type?: string; size?: number; lastModified?: number; uploadedAt?: number };
+
+function validateFilename(filename: string) {
+	if(filename.endsWith(".txt") || filename.endsWith(".log") || filename.endsWith(".dmp")) {
+		return true;
+	}
+	return false;
+}
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -43,9 +50,8 @@ export default {
 						name = url.searchParams.get('name');
 					}
 				}
-
 				// Form data
-				if (contentType.includes('multipart/form-data')) {
+				else if (contentType.includes('multipart/form-data')) {
 					const formData = await request.formData();
 					// @ts-expect-error
 					const file: File = formData.get('file');
@@ -55,14 +61,15 @@ export default {
 						name = file.name;
 					}
 				}
-
 				// Binary data
-				if (contentType.includes('application/octet-stream')) {
+				else if (contentType.includes('application/octet-stream')) {
 					type = 'application/octet-stream';
 					content = await request.arrayBuffer();
 					if (url.searchParams.get('name')) {
 						name = url.searchParams.get('name');
 					}
+				} else {
+					return new Response('Unsupported Media Type', { status: 415 });
 				}
 
 				if (!content) {
@@ -77,10 +84,14 @@ export default {
 					name = uuid + '.txt';
 				}
 
+				if(!validateFilename(name)) {
+					return new Response("Invalid File Name", { status: 400 });
+				}
+
 				try {
 					await env.MOONLIGHT_LOGS.put(uuid, content, {
 						expirationTtl: env.MOONLIGHT_EXPIRATION_TTL,
-						metadata: { name, type, lastModified: Date.now() },
+						metadata: { name, type, size: content.byteLength, lastModified: Date.now() },
 					});
 				} catch (error) {
 					console.error(error);
@@ -92,10 +103,12 @@ export default {
 				redirectURL.searchParams.set('id', uuid);
 				const accept = request.headers.get('Accept');
 				if (accept && accept.includes('text/html')) {
+					// Return the success page with link injected into it
 					return new Response(resultPage.replaceAll('{{ redirectURL }}', redirectURL.toString()), {
 						headers: { 'Content-Type': 'text/html;charset=UTF-8' },
 					});
 				} else {
+					// Return a 201 Created response with URL in header and body
 					return new Response(redirectURL.toString(), {
 						status: 201,
 						headers: { Location: redirectURL.toString() },
