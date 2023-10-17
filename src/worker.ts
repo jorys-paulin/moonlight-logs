@@ -12,8 +12,14 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 type MoonlightLogsKVMetadata = { name?: string; type?: string; size?: number; lastModified?: number; uploadedAt?: number };
 
-function validateFilename(filename: string) {
-	if(filename.endsWith(".txt") || filename.endsWith(".log") || filename.endsWith(".dmp")) {
+/**
+ * Validates if a given file name is valid or not
+ *
+ * @param {string} filename
+ * @returns {boolean} `true` if the file name is valid, `false` if it's not
+ */
+function validateFilename(filename: string): boolean {
+	if (filename.endsWith('.txt') || filename.endsWith('.log') || filename.endsWith('.dmp')) {
 		return true;
 	}
 	return false;
@@ -23,10 +29,10 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url);
 
-		if (url.pathname.endsWith('/')) {
+		if (url.pathname === '/') {
 			// Homepage route
 			if (request.method === 'GET' && !url.searchParams.has('id')) {
-				return new Response(indexPage, { headers: { 'Content-Type': 'text/html' } });
+				return new Response(indexPage, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
 			}
 
 			// Upload route
@@ -46,11 +52,18 @@ export default {
 				if (contentType.includes('text/plain')) {
 					type = 'text/plain; charset=UTF-8';
 					content = await request.arrayBuffer();
-					if (url.searchParams.get('name')) {
+					if (url.searchParams.has('name')) {
 						name = url.searchParams.get('name');
 					}
 				}
-				// Form data
+				// Binary data
+				else if (contentType.includes('application/octet-stream')) {
+					type = 'application/octet-stream';
+					content = await request.arrayBuffer();
+					if (url.searchParams.has('name')) {
+						name = url.searchParams.get('name');
+					}
+				} // Form data
 				else if (contentType.includes('multipart/form-data')) {
 					const formData = await request.formData();
 					// @ts-expect-error
@@ -60,14 +73,6 @@ export default {
 					if (file.name) {
 						name = file.name;
 					}
-				}
-				// Binary data
-				else if (contentType.includes('application/octet-stream')) {
-					type = 'application/octet-stream';
-					content = await request.arrayBuffer();
-					if (url.searchParams.get('name')) {
-						name = url.searchParams.get('name');
-					}
 				} else {
 					return new Response('Unsupported Media Type', { status: 415 });
 				}
@@ -76,18 +81,17 @@ export default {
 					return new Response('Invalid Contents', { status: 400 });
 				}
 
+				// File exeeds size limit
 				if (content.byteLength > env.MOONLIGHT_MAX_FILE_SIZE) {
 					return new Response('Payload Too Large', { status: 413 });
 				}
 
-				if (!name) {
-					name = uuid + '.txt';
+				// Reject invalid file names
+				if (!name || !validateFilename(name)) {
+					return new Response('Invalid File Name', { status: 400 });
 				}
 
-				if(!validateFilename(name)) {
-					return new Response("Invalid File Name", { status: 400 });
-				}
-
+				// Upload file to KV
 				try {
 					await env.MOONLIGHT_LOGS.put(uuid, content, {
 						expirationTtl: env.MOONLIGHT_EXPIRATION_TTL,
@@ -98,9 +102,11 @@ export default {
 					return new Response('Internal Server Error', { status: 500 });
 				}
 
+				// Generate uploaded file URL
 				const redirectURL = new URL(url);
 				redirectURL.search = '';
 				redirectURL.searchParams.set('id', uuid);
+				// Return page only for browsers
 				const accept = request.headers.get('Accept');
 				if (accept && accept.includes('text/html')) {
 					// Return the success page with link injected into it
@@ -130,39 +136,40 @@ export default {
 					return new Response('Invalid UUID', { status: 400 });
 				}
 
+				// TRy to fetch the file from KV
 				const { value, metadata } = await env.MOONLIGHT_LOGS.getWithMetadata<MoonlightLogsKVMetadata>(uuid, {
 					cacheTtl: 60,
 					type: 'arrayBuffer',
 				});
 
+				// File doesn't exist
 				if (value === null) {
 					return new Response('File not found', { status: 404 });
 				}
 
+				// Response headers
 				const headers = new Headers();
 				headers.set('Content-Type', 'text/plain; charset=UTF-8');
+				headers.set('Content-Disposition', `attachment; filename="${uuid}.txt"`);
 
-				// File type
-				if (metadata && metadata.type) {
-					if (metadata.type === 'text/plain') {
-						headers.set('Content-Type', 'text/plain; charset=UTF-8');
-					} else {
+				// File metadata
+				if (metadata) {
+					// File type
+					if (metadata.type) {
 						headers.set('Content-Type', metadata.type);
 					}
-				}
 
-				// File name
-				let filename = uuid + '.txt';
-				if (metadata && metadata.name) {
-					filename = metadata.name;
-				}
-				headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+					// File name
+					if (metadata.name) {
+						headers.set('Content-Disposition', `attachment; filename="${metadata.name}"`);
+					}
 
-				// Last modified metadata
-				if (metadata && metadata.lastModified) {
-					const lastModified = new Date(metadata.lastModified);
-					// @ts-expect-error
-					headers.set('Last-Modified', lastModified.toGMTString());
+					// File update date
+					if (metadata.lastModified) {
+						const lastModified = new Date(metadata.lastModified);
+						// @ts-expect-error
+						headers.set('Last-Modified', lastModified.toGMTString());
+					}
 				}
 
 				return new Response(value, { headers });
