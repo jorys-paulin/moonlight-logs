@@ -1,6 +1,6 @@
 name = "moonlight-logs"
 main = "src/worker.ts"
-compatibility_date = "2023-08-01"
+compatibility_date = "2023-12-18"
 
 [vars]
 MOONLIGHT_MAX_FILE_SIZE = 26214400
