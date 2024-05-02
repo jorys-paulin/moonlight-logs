@@ -206,9 +206,9 @@ export default {
 		}
 
 		// // Favicon route
-		// if (request.method === 'GET' && url.pathname === '/favicon.ico') {
-		// 	return new Response('Not Found', { status: 404 });
-		// }
+		if (request.method === 'GET' && url.pathname === '/favicon.ico') {
+			return fetch('https://moonlight-stream.org/favicon.ico');
+		}
 
 		// Default route
 		return new Response('Not Found', { status: 404 });
