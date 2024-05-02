@@ -136,7 +136,7 @@ export default {
 					return new Response('Invalid UUID', { status: 400 });
 				}
 
-				// TRy to fetch the file from KV
+				// Try to fetch the file from KV
 				const { value, metadata } = await env.MOONLIGHT_LOGS.getWithMetadata<MoonlightLogsKVMetadata>(uuid, {
 					cacheTtl: 60,
 					type: 'arrayBuffer',
