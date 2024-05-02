@@ -167,8 +167,7 @@ export default {
 					// File update date
 					if (metadata.lastModified) {
 						const lastModified = new Date(metadata.lastModified);
-						// @ts-expect-error
-						headers.set('Last-Modified', lastModified.toGMTString());
+						headers.set('Last-Modified', lastModified.toUTCString());
 					}
 				}
 
