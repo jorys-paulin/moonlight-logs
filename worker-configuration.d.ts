@@ -8,6 +8,6 @@ interface Env {
 	// Administration token used to authenticate DELETE requests
 	MOONLIGHT_ADMIN_TOKEN: string;
 
-	// Binding to KV namespace used to store files
+	// Binding to the KV namespace used to store files
 	MOONLIGHT_LOGS: KVNamespace;
 }
