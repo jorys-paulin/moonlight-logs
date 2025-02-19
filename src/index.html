@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 	<head>
-		<meta charset="UTF-8" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Moonlight Logs</title>
-		<meta name="description" content="This is a small service to upload and download Moonlight logs" />
-		<meta name="theme-color" content="#434343" />
-		<link rel="preconnect" href="https://fonts.googleapis.com" />
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+		<meta name="description" content="Moonlight Logs is a simple file hosting service to upload and share logs from Moonlight clients.">
+		<meta name="theme-color" content="#434343">
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap">
 		<style>
 			:root {
 				color-scheme: dark;
@@ -37,17 +37,17 @@
 	</head>
 	<body>
 		<h1>Moonlight Logs</h1>
-		<p>This is a small service to upload and download Moonlight logs</p>
+		<p>Moonlight Logs is a simple file hosting service to upload and share logs from Moonlight clients.</p>
 		<h2>Upload a new log</h2>
 		<p>You can use the following form to upload a log manually. Once uploaded you'll get a link you can use to share the log file.</p>
 		<form method="post" enctype="multipart/form-data">
-			<input type="file" name="file" id="fileInput" accept=".txt, .log, .dmp" required />
+			<input type="file" name="file" id="fileInput" accept=".txt, .log, .dmp" required>
 			<button type="submit">Upload</button>
 		</form>
 		<h2>Download a log</h2>
 		<p>You can download a specific log if you know its unique identifier.</p>
 		<form>
-			<input type="text" name="id" placeholder="ab92275a-745e-4c35-ad95-83e853803a43" required />
+			<input type="text" name="id" placeholder="ab92275a-745e-4c35-ad95-83e853803a43" required>
 			<button type="submit">Download</button>
 		</form>
 		<script>
