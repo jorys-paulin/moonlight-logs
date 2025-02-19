@@ -120,6 +120,8 @@ export default {
 				const redirectURL = new URL(url);
 				redirectURL.search = '';
 				redirectURL.searchParams.set('id', uuid);
+				// Compute expiration date
+				const date = new Date(Date.now() + env.MOONLIGHT_EXPIRATION_TTL * 1000);
 				// Return page only for browsers
 				const accept = request.headers.get('Accept');
 				if (accept && accept.includes('text/html')) {
@@ -133,6 +135,7 @@ export default {
 						status: 201,
 						headers: {
 							Location: redirectURL.toString(),
+							Expires: date.toUTCString(),
 							'Access-Control-Allow-Origin': '*',
 							'Access-Control-Expose-Headers': 'Location',
 						},
