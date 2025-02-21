@@ -224,6 +224,12 @@ export default {
 
 				return new Response(null, { status: 204, headers: { 'Access-Control-Allow-Origin': '*' } });
 			}
+
+			// Error for other HTTP methods
+			return new Response('Method Not Allowed', {
+				status: 405,
+				headers: { Allow: 'GET, POST, DELETE, OPTIONS', 'Access-Control-Allow-Origin': '*' },
+			});
 		}
 
 		// // Favicon route
