@@ -3,11 +3,7 @@
  * A simple service to upload and download Moonlight log files, powered by CloudFlare Workers
  */
 
-// @ts-ignore
-import indexPage from './index.html';
-// @ts-ignore
-import resultPage from './result.html';
-
+/** Regex used to validate UUIDs */
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 /** Metadata for logs stored in CloudFlare KV */
@@ -24,6 +20,55 @@ function validateFilename(filename: string): boolean {
 		return true;
 	}
 	return false;
+}
+
+/**
+ * Base template for pages
+ * @param content Contents for the page
+ * @param title Title for the page
+ * @param description Description for the pahe
+ * @returns
+ */
+function pageTemplate(
+	content: string,
+	title: string = 'Moonlight Logs',
+	description: string = 'This is a small service to upload and download Moonlight logs.'
+) {
+	return `<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>${title}</title>
+		<meta name="description" content="${description}" />
+		<meta name="theme-color" content="#434343" />
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+		<style>
+			:root {
+				color-scheme: dark;
+			}
+
+			* {
+				box-sizing: border-box;
+			}
+
+			body {
+				max-width: 540px;
+				margin: 0 auto;
+				padding: 1rem;
+				font-family: 'Open Sans', sans-serif;
+				line-height: 1.5;
+				background-color: #121212;
+				color: #fff;
+			}
+		</style>
+	</head>
+	<body>
+		${content}
+	</body>
+</html>`;
 }
 
 export default {
@@ -47,7 +92,45 @@ export default {
 
 			// Homepage route
 			if (request.method === 'GET' && !url.searchParams.has('id')) {
-				return new Response(indexPage, { headers: { 'Content-Type': 'text/html;charset=UTF-8' } });
+				return new Response(
+					pageTemplate(
+						`<style>
+			form {
+				display: grid;
+				gap: 1rem;
+				grid-template-columns: 2fr 1fr;
+			}
+		</style>
+		<h1>Moonlight Logs</h1>
+		<p>Moonlight Logs is a simple file hosting service to upload and share logs from Moonlight clients.</p>
+		<h2>Upload a new log</h2>
+		<p>You can use the following form to upload a log manually. Once uploaded you'll get a link you can use to share the log file.</p>
+		<form method="post" enctype="multipart/form-data">
+			<input type="file" name="file" id="fileInput" accept=".txt, .log, .dmp" required>
+			<button type="submit">Upload</button>
+		</form>
+		<h2>Download a log</h2>
+		<p>You can download a specific log if you know its unique identifier.</p>
+		<form>
+			<input type="text" name="id" placeholder="ab92275a-745e-4c35-ad95-83e853803a43" required>
+			<button type="submit">Download</button>
+		</form>
+		<script>
+			const fileInput = document.querySelector('input#fileInput');
+			fileInput.addEventListener('change', (e) => {
+				const file = e.target.files[0];
+				// Check file size (25 MiB max)
+				if (file.size > 26214400) {
+					alert('Your selected file is too large, it must be under 25 MiB');
+					e.target.value = '';
+				}
+			});
+		</script>`,
+						'Moonlight Logs',
+						'Moonlight Logs is a simple file hosting service to upload and share logs from Moonlight clients.'
+					),
+					{ headers: { 'Content-Type': 'text/html;charset=UTF-8' } }
+				);
 			}
 
 			// Upload route
@@ -128,9 +211,19 @@ export default {
 				const accept = request.headers.get('Accept');
 				if (accept && accept.includes('text/html')) {
 					// Return the success page with link injected into it
-					return new Response(resultPage.replaceAll('{{ redirectURL }}', redirectURL.toString()), {
-						headers: { 'Content-Type': 'text/html;charset=UTF-8' },
-					});
+					return new Response(
+						pageTemplate(
+							`<h1>Log successfully uploaded!</h1>
+		<p>Your log has been successfully uploaded and is now available at the following address:</p>
+		<p><a href="${redirectURL.toString()}">${redirectURL.toString()}</a></p>
+		<p>Keep in mind that anyone with this link can download your log file and that it will be deleted in 30 days.</p>
+		<p><a href="">Go back to home page</a></p>`,
+							'Log successfully uploaded!'
+						),
+						{
+							headers: { 'Content-Type': 'text/html;charset=UTF-8' },
+						}
+					);
 				} else {
 					// Return a 201 Created response with URL in header and body
 					return new Response(redirectURL.toString(), {
