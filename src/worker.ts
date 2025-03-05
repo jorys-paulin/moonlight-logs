@@ -10,7 +10,8 @@ import resultPage from './result.html';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
-type MoonlightLogsKVMetadata = { name?: string; type?: string; size?: number; lastModified?: number; uploadedAt?: number };
+/** Metadata for logs stored in CloudFlare KV */
+type KVMetadata = { name?: string; type?: string; size?: number; lastModified?: number; uploadedAt?: number };
 
 /**
  * Validates if a given file name is valid or not
@@ -107,9 +108,10 @@ export default {
 
 				// Upload file to KV
 				try {
+					const metadata: KVMetadata = { name, type, size: content.byteLength, lastModified: Date.now(), uploadedAt: Date.now() };
 					await env.MOONLIGHT_LOGS.put(uuid, content, {
 						expirationTtl: env.MOONLIGHT_EXPIRATION_TTL,
-						metadata: { name, type, size: content.byteLength, lastModified: Date.now() },
+						metadata,
 					});
 				} catch (error) {
 					console.error(error);
@@ -158,7 +160,7 @@ export default {
 				}
 
 				// Try to fetch the file from KV
-				const { value, metadata } = await env.MOONLIGHT_LOGS.getWithMetadata<MoonlightLogsKVMetadata>(uuid, {
+				const { value, metadata } = await env.MOONLIGHT_LOGS.getWithMetadata<KVMetadata>(uuid, {
 					cacheTtl: 60,
 					type: 'arrayBuffer',
 				});
