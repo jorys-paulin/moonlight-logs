@@ -120,8 +120,8 @@ export default {
 			fileInput.addEventListener('change', (e) => {
 				const file = e.target.files[0];
 				// Check file size (25 MiB max)
-				if (file.size > 26214400) {
-					alert('Your selected file is too large, it must be under 25 MiB');
+				if (file.size > ${env.MOONLIGHT_MAX_FILE_SIZE}) {
+					alert('Your selected file is too large, it must be under ${env.MOONLIGHT_MAX_FILE_SIZE / 1024 / 1024} MiB');
 					e.target.value = '';
 				}
 			});
